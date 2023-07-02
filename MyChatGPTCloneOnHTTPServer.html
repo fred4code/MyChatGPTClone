@@ -1,0 +1,400 @@
+﻿<!-- 
+This html file MyChatGPTCloneOnHTTPServer.html is licensed under the MIT License.
+See http://opensource.org/licenses/MIT for more information.
+
+Copyright (c) 2023 fred4code
+-->
+
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+    <title>MyChatGPTClone</title>
+    <style type="text/css">
+
+        * {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        :root {
+            touch-action: pan-x pan-y;
+            height: 100% 
+            }
+
+        html, body, div_app {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #edf2f4;
+            overflow: hidden;
+        }  
+ 
+        #div_menu {
+            position: absolute;
+            height: 40px;
+            top: 0;
+            left:0;
+            right:0;
+            background-color: #8d99ae;
+            color: #2b2d42;
+        }
+
+        #div_new_chat{
+            position:absolute;
+            top: 5px;
+            left: 5px;
+            height: 30px;
+            width: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            background-color:  #edf2f4;
+        }
+
+        #div_fullScreen{
+            position:absolute;
+            top: 5px;
+            right: 40px;
+            height: 30px;
+            width: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            background-color:  #edf2f4;
+        }
+
+        #div_zoom{
+            position:absolute;
+            top: 5px;
+            right: 5px;
+            height: 30px;
+            width: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            background-color:  #edf2f4;
+        }
+ 
+        #div_dialogue {
+            position: absolute;
+            top: 40px;
+            left:0;
+            right:0;
+            bottom: 150px;
+            
+            background-color:  #edf2f4;
+            color: #2b2d42;
+            padding: 10px;
+            overflow: auto;
+
+            border-bottom: 2px solid  #8d99ae;
+
+        }
+  
+        #div_send {
+            position:absolute;
+            width: 40px;
+            height: 150px;
+            right:0;
+            bottom: 0;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;    
+
+            user-select: none;
+            background-color: #8d99ae;
+            color: #2b2d42;
+
+        }  
+        #div_send_cover {
+
+            position:absolute;
+            width: 40px;
+            height: 150px;
+            right:0;
+            bottom: 0;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;    
+
+            user-select: none;
+            background-color:#edf2f4;
+            opacity: 0.6;
+
+            display: none;
+
+        }
+
+        #div_question {
+            position:absolute;
+            height: 150px;
+            left:0;
+            right:40px;
+            bottom: 0;
+            
+            background-color: #edf2f4;
+            color: #2b2d42;
+        }
+        #div_question_inner{
+            position:relative;
+            padding: 10px;
+            outline: none;
+            zoom: 1;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            resize: none;
+            background-color:  #edf2f4;
+            
+        }
+
+        .question {
+            margin: 0 0 10px 0;
+            zoom: 1;
+
+        }
+
+        .answer {
+            margin: 0 0 10px 0;
+            zoom: 1;
+        }
+
+        .error {
+            margin: 0 0 10px 0;
+            zoom: 1;
+        }
+
+    </style>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            //Object defined as an object literal (we need only one instance of this so we can use object literal)
+            var MAnimation = {
+                _Private: {
+                    MP_Interval: null,
+                    MP_WaitingAnimation: $("#waiting-animation"),
+                    MP_DotCounter: 0,
+                    MM_UpdateAnimation: function () {
+                        this._Private.MP_DotCounter = (this._Private.MP_DotCounter + 1) % 6;
+                        let dots = "";
+
+                        for (let i = 0; i < this._Private.MP_DotCounter; i++) {
+                            dots += ".";
+                        }
+                        this._Private.MP_WaitingAnimation.text(dots);
+                    }
+                },
+                MM_StartAnimation: function () {
+                    this._Private.MP_Interval = setInterval(this._Private.MM_UpdateAnimation.bind(this), 500); // 500 ms interval
+                },
+                MM_StopAnimation: function () {
+                    clearInterval(this._Private.MP_Interval);
+                    this._Private.MP_WaitingAnimation.text(""); // Clear the div content after stopping the animation
+                },
+                MM_MoveAnimation: function (pId) {
+                    this._Private.MP_WaitingAnimation.appendTo(pId);
+                }
+            };
+
+            var MV_CanBeChatted = null;
+
+            function Send(pData)
+            {
+
+                var dataToSend = {
+                    question: pData
+                };
+
+                $.ajax({
+                    url: "http://127.0.0.1:9191/",
+                    type: "POST",
+                    data: JSON.stringify(dataToSend),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function(response) {
+                        console.log("POST request successful:", response);
+
+                        var div_0 = document.createElement("div");
+                        $(div_0).addClass("initialization");
+                        $(div_0).appendTo("#div_dialogue");
+                    
+                        SetMessage(response, "answer");
+
+                        $("#div_dialogue").scrollTop($("#div_dialogue")[0].scrollHeight);
+                        $("#div_question_inner").get(0).disabled = false;
+                        $("#div_send_cover").css("display","none");
+                        
+                        MAnimation.MM_StopAnimation();
+
+                        MV_CanBeChatted = true;
+
+                    },
+                    error: function(xhr, status, error) {
+                        console.log("Error:", status, error);
+
+                        var div_0 = document.createElement("div");
+                        $(div_0).addClass("initialization");
+                        $(div_0).appendTo("#div_dialogue");
+                    
+                        SetMessage(error, "error");
+
+                        $("#div_dialogue").scrollTop($("#div_dialogue")[0].scrollHeight);
+                        $("#div_question_inner").get(0).disabled = false;
+                        $("#div_send_cover").css("display","none");
+                        
+                        MAnimation.MM_StopAnimation();
+
+                        MV_CanBeChatted = true;
+                    }
+                });
+
+            }
+
+            MAnimation.MM_StartAnimation();
+
+            Send("NEW_CHAT");
+
+            var conversation_gui = "gui_";
+            var conversation_counter = 0;
+            function SetMessage(pMessage, pType)
+            {
+                
+                var div_0 = document.createElement("div");
+                $(div_0).attr("id", conversation_gui + conversation_counter);
+                conversation_counter = conversation_counter + 1;
+                if (pType === "answer")
+                {
+                    $(div_0).addClass(pType);
+                    $(div_0).html("[gpt]: " + pMessage.replace(/\n/g, "<div></div>"));
+                    $(div_0).appendTo("#div_dialogue");
+                }
+                else if (pType === "question")
+                {
+                    $(div_0).addClass(pType);
+                    $(div_0).html("[you]: " + pMessage);
+                    $(div_0).appendTo("#div_dialogue");  
+                }
+                else if (pType === "error")
+                {
+                    $(div_0).addClass(pType);
+                    $(div_0).html(pMessage);
+                    $(div_0).appendTo("#div_dialogue"); 
+                }
+
+            }
+
+            //
+            $("#div_send").on("click", function () {
+
+                if (MV_CanBeChatted === true)
+                {
+
+                    var message = $("#div_question_inner").val();
+
+                    SetMessage(message, "question");
+
+                    MAnimation.MM_MoveAnimation("#div_dialogue");
+
+                    MAnimation.MM_StartAnimation();
+
+                    $("#div_dialogue").scrollTop($("#div_dialogue")[0].scrollHeight);
+
+                    Send(message);
+
+                    $("#div_question_inner").val("");
+                    $("#div_question_inner").get(0).disabled = true;
+                    $("#div_send_cover").css("display","block");               
+
+                }
+
+            });
+
+
+            $("#div_new_chat").on("click", function () {
+
+                if (MV_CanBeChatted === true)
+                {
+                    Send("NEW_CHAT");
+                }
+
+            });
+
+            $("#div_fullScreen").on("click", function () {
+
+                if ($("#div_fullScreen").text() === "f")
+                {
+
+                    //for chrome
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen();
+                    
+                        $("#div_fullScreen").text("F");
+                    }
+                }
+                else
+                {
+                    document.exitFullscreen();
+
+                    $("#div_fullScreen").text("f");
+                    
+                }
+            
+            });
+
+            $("#div_zoom").on("click", function () {
+                
+                $(".question, .answer, #div_question_inner").each(function(){
+
+                    if ($(this).css("zoom") === "1")
+                    {
+                        $(this).css("zoom", "1.5");
+                    }
+                    else if ($(this).css("zoom") === "1.5")
+                    {
+                        $(this).css("zoom", "0.5");
+                    }
+                    else if ($(this).css("zoom") === "0.5")
+                    {
+                        $(this).css("zoom", "1");
+                    }
+
+                });
+            
+            });
+
+        });
+
+    </script>
+</head>
+<body>    
+    <div id="waiting-animation" style="display: block;"></div>
+    <div id="div_app">
+        <div id="div_menu">
+            <div id="div_new_chat">+</div>
+            <div id="div_fullScreen">f</div>
+            <div id="div_zoom">z</div>
+        </div>
+        <div id="div_dialogue"></div>
+        <div id="div_send">></div>
+        <div id="div_send_cover"></div>
+        <div id="div_question">
+            <textarea id="div_question_inner">Write your question here...</textarea >
+        </div>
+    </div>
+</body>
+</html>

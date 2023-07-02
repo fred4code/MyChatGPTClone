@@ -1,0 +1,8 @@
+{
+    "//Comment1":  "Put in apikey down here the API Key that you have retrieved from your OpenAI Account",
+    "apikey" : "_YOUR_API_KEY_",
+    "//Comment2":  "In MyChatGPTClone.html host is fixed to 127.0.0.1 so if you change it there you have to change it also down here in host",
+    "host" : "127.0.0.1",
+    "//Comment3":  "In MyChatGPTClone.html port is fixed to 9191 so if you change it there you have to change it also down here",
+    "port" : "9191"
+}
