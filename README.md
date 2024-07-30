@@ -37,3 +37,9 @@ Sometimes, the application may freeze with no response from the Python server. T
 
 # Further Reading
 For more information on the OpenAI API, example uses, and extensive documentation, please visit the official OpenAI platform at [https://platform.openai.com/](https://platform.openai.com/).
+
+# Screenshot
+A screenshot of the front end chat (on the left) with the backend server in python with the response from the OpenAI API (on the right):
+
+![image](https://github.com/user-attachments/assets/9a97d4cd-748a-47f7-87a8-21444f81019e)
+
